@@ -1,42 +1,53 @@
-struct Line {
-    long long m, c; // Line represented as y = mx + c
-    Line(long long m = 0, long long c = 0) : m(m), c(c) {}
+/*
+CHT template
+*/
 
-    // Function to evaluate line y = mx + c at a given x
-    long long value(long long x) const {
-        return m * x + c;
+const ll INF = 1e18 + 69; 
+
+struct CHT{
+    #define Node pair<ll, ll>
+    vector<Node> a;
+    vector<double> bubble;
+    bool flag;
+
+    // if flag = 0: if inserted in increasing order, return min, otherwise return max
+    // flag = 1: the opposite
+ 
+    CHT(bool _flag){
+        flag = _flag;
     }
-
-    // Function to determine the intersection point with another line
-    double intersectX(const Line& other) const {
-        return static_cast<double>(c - other.c) / (other.m - m);
+ 
+    double getInter(Node a, Node b){
+        double x = (double) (b.second - a.second) / (a.first - b.first);
+        return x;
     }
-};
-
-class ConvexHullTrick {
-public:
-    void addLine(long long m, long long c) {
-        Line newLine(m, c);
-        while (hull.size() >= 2 && badLine(hull[hull.size() - 2], hull.back(), newLine)) {
-            hull.pop_back();
+ 
+    void add(Node x, bool isMin = 1){
+        if (a.empty()) {a.push_back(x); return;}
+        if (a.back().first == x.first){
+            if (isMin) minimize(a[a.size() - 1].second, x.second);
+            else maximize(a[a.size() - 1].second, x.second);
+            return;
         }
-        hull.push_back(newLine);
-    }
-
-    long long query(long long x) {
-        if (ptr >= hull.size()) ptr = hull.size() - 1;
-        while (ptr + 1 < hull.size() && hull[ptr + 1].value(x) > hull[ptr].value(x)) {
-            ++ptr;
+        while(a.size() >= 2){
+            double x1 = getInter(a.back(), x), x2 = bubble.back();
+            if (flag){
+                if (x1 >= x2) break;
+            }
+            else{
+                if (x1 <= x2) break;
+            }
+            a.pop_back(); bubble.pop_back();
         }
-        return hull[ptr].value(x);
+        bubble.push_back(getInter(a.back(), x));
+        a.push_back(x);
     }
-
-private:
-    vector<Line> hull; // Stores the lines of the convex hull
-    size_t ptr = 0; // Pointer to the current best line for query
-
-    // Check if the middle line is "bad" (can be removed)
-    bool badLine(const Line& l1, const Line& l2, const Line& l3) {
-        return (l3.c - l1.c) * (l1.m - l2.m) <= (l2.c - l1.c) * (l1.m - l3.m);
+ 
+    ll get(ll x){
+        if (a.empty()) return INF;
+        long idx;
+        if (flag) idx = lower_bound(ALL(bubble),x) - bubble.begin();
+        else idx = lower_bound(ALL(bubble), x, greater<double>()) - bubble.begin();
+        return a[idx].first * x + a[idx].second;
     }
 };
