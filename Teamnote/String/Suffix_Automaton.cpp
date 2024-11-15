@@ -1,82 +1,46 @@
-// SUFFIX AUTOMATON
-/*
- * Usage : 
- * printStates() : Function to print the states of the suffix automaton.
- * build() : Function to build the suffix automaton.
- * extend() : Function to extend the automaton with the next character.
-*/
 
-class SuffixAutomaton {
-public:
-    SuffixAutomaton(const string& s) : s(s), size(0), last(0) {
-        build();
-    }
+/* IT IS THE SHORTEST VER I CAN FIND */
+// Time complexity : O(N)
 
-    void printStates() const {
-        for (int i = 0; i <= size; ++i) {
-            cout << "State " << i << ": ";
-            for (int j = 0; j < 256; ++j) {
-                if (nextState[i][j] != -1) {
-                    cout << "(" << (char)j << " -> " << nextState[i][j] << ") ";
-                }
-            }
-            cout << "Suffix Link: " << suffixLink[i] << endl;
-        }
-        return;
-    }
+struct SuffixAutomaton {
+    vector<vector<int>> next;
+    vector<int> len, link;
+    int last, size;
 
-private:
-    string s;          
-    int size;                
-    int last;            
-    vector<int> length;
-    vector<int> suffixLink;   
-    vector<vector<int>> nextState;  
-
-    void build() {
-        int n = s.size();
-        length.resize(2 * n);
-        suffixLink.resize(2 * n, -1);
-        nextState.assign(2 * n, vector<int>(256, -1));
-        size = 0;
-        last = 0;
+    SuffixAutomaton(const string &s) {
+        size = 1; last = 0;
+        len.push_back(0); link.push_back(-1);
+        next.push_back(vector<int>(26, -1));
+        
         for (char c : s) {
-            extend(c);
-        }
-        return;
-    }
-
-    void extend(char c) {
-        int cur = ++size; 
-        length[cur] = length[last] + 1;
-
-        int p = last;
-        while (p != -1 && nextState[p][c] == -1) {
-            nextState[p][c] = cur;
-            p = suffixLink[p];
-        }
-
-        if (p == -1) {
-            suffixLink[cur] = 0;
-        } else {
-            int q = nextState[p][c];
-            if (length[p] + 1 == length[q]) {
-                suffixLink[cur] = q;
-            } else {
-                int clone = ++size;
-                length[clone] = length[p] + 1;
-                nextState[clone] = nextState[q]; 
-                suffixLink[clone] = suffixLink[q];
-
-                while (p != -1 && nextState[p][c] == q) {
-                    nextState[p][c] = clone;
-                    p = suffixLink[p];
-                }
-
-                suffixLink[q] = suffixLink[cur] = clone;
+            int cur = size++;
+            len.push_back(len[last] + 1);
+            next.push_back(vector<int>(26, -1));
+            link.push_back(-1);
+            
+            int p = last;
+            while (p != -1 && next[p][c - 'a'] == -1) {
+                next[p][c - 'a'] = cur;
+                p = link[p];
             }
+
+            if (p == -1) link[cur] = 0;
+            else {
+                int q = next[p][c - 'a'];
+                if (len[p] + 1 == len[q]) link[cur] = q;
+                else {
+                    int clone = size++;
+                    len.push_back(len[p] + 1);
+                    next.push_back(next[q]);
+                    link.push_back(link[q]);
+                    while (p != -1 && next[p][c - 'a'] == q) {
+                        next[p][c - 'a'] = clone;
+                        p = link[p];
+                    }
+                    link[q] = link[cur] = clone;
+                }
+            }
+            last = cur;
         }
-        last = cur;
-        return;
     }
 };

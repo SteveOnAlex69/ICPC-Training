@@ -1,53 +1,15 @@
-// Z-FUNCTION :
-/*
- * Usage : 
- * computeZFunction() : Function to compute the Z-function for the string
- * printZFunction() : Print Z Function.
-*/
 
-class ZFunction {
-public:
-    ZFunction(const string& s) : S(s), n(s.length()) {}
+/* YEP! IT IS JUST A Z FUNCTION */
+//    Time complexity : O(N)
 
-    vector<int> computeZFunction() {
-        vector<int> Z(n, 0);
-        int L = 0, R = 0; 
-
-        for (int i = 1; i < n; ++i) {
-            if (i > R) {
-                L = R = i;
-                while (R < n && S[R] == S[R - L]) {
-                    R++;
-                }
-                Z[i] = R - L;
-            }
-            else {
-                int k = i - L;
-                if (Z[k] < R - i + 1) {
-                    Z[i] = Z[k];
-                }
-                else {
-                    L = i;
-                    while (R < n && S[R] == S[R - L]) {
-                        R++;
-                    }
-                    Z[i] = R - L;
-                }
-            }
-        }
-
-        return Z;
+vector<int> ZFunction(const string &S) {
+    int n = S.length();
+    vector<int> Z(n);
+    for (int L = 0, R = 0, i = 1; i < n; ++i) {
+        if (i <= R) Z[i] = min(R - i + 1, Z[i - L]);
+        while (i + Z[i] < n && S[Z[i]] == S[i + Z[i]]) Z[i]++;
+        if (i + Z[i] - 1 > R) L = i, R = i + Z[i] - 1;
     }
-
-    void printZFunction() {
-        vector<int> Z = computeZFunction();
-        cout << "Z-function: ";
-        for (int z : Z) {
-            cout << z << " ";
-        }
-        cout << endl;
-    }
-private:
-    string S;
-    int n;
-};
+    Z[0] = n;
+    return Z;
+}

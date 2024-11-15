@@ -1,101 +1,60 @@
-// AHO CORASICK
-/*
- * Usage :
- * ~AhoCorasick() : Destructor to free dynamically allocated memory.
- * addPattern() : Add a pattern to the trie.
- * build() : Build the Aho-Corasick automaton (failure links).
- * search() : Search the text for all patterns.
- * deleteTrie() : Recursively delete the Trie.
+
+/* 
+ * Usage : 
+ * addPattern : Adds patterns to the trie structure.
+ * build : Sets up the fail links via BFS.
+ * search : Performs the search and returns the indices of patterns found in the text.
+ * Time complexity : O(n + S(Ai))
 */
 
 class AhoCorasick {
 public:
-    AhoCorasick() {
-        root = new TrieNode();
-    }
+    AhoCorasick() { edges.push_back({}); fail.push_back(-1); output.push_back({}); }
 
-    ~AhoCorasick() {
-        deleteTrie(root);
-    }
-
-    void addPattern(const string& pattern, int index) {
-        TrieNode* node = root;
+    void addPattern(const string& pattern, int idx) {
+        int node = 0;
         for (char c : pattern) {
-            if (node->children.find(c) == node->children.end()) {
-                node->children[c] = new TrieNode();
+            if (!edges[node].count(c)) {
+                edges[node][c] = edges.size();
+                edges.push_back({}); fail.push_back(-1); output.push_back({});
             }
-            node = node->children[c];
+            node = edges[node][c];
         }
-        node->output.push_back(index);
-        return;
+        output[node].insert(idx);
     }
 
     void build() {
-        queue<TrieNode*> q;
-        
-        for (auto& p : root->children) {
-            p.second->fail = root;
+        queue<int> q;
+        for (auto& p : edges[0]) {
+            fail[p.second] = 0;
             q.push(p.second);
         }
-
         while (!q.empty()) {
-            TrieNode* current = q.front();
-            q.pop();
-            for (auto& p : current->children) {
-                TrieNode* child = p.second;
-                TrieNode* failNode = current->fail;
-
-                while (failNode != nullptr && failNode->children.find(p.first) == failNode->children.end()) {
-                    failNode = failNode->fail;
-                }
-
-                if (failNode != nullptr) {
-                    child->fail = failNode->children[p.first];
-                } else {
-                    child->fail = root;
-                }
-
-                child->output.insert(child->output.end(), child->fail->output.begin(), child->fail->output.end());
-
-                q.push(child);
+            int state = q.front(); q.pop();
+            for (auto& p : edges[state]) {
+                char c = p.first;
+                int next = p.second, f = fail[state];
+                while (!edges[f].count(c)) f = fail[f];
+                fail[next] = edges[f][c];
+                output[next].insert(output[fail[next]].begin(), output[fail[next]].end());
+                q.push(next);
             }
         }
-        return;
     }
 
-    void search(const string& text) {
-        TrieNode* node = root;
-
-        for (int i = 0; i < text.length(); ++i) {
-            while (node != root && node->children.find(text[i]) == node->children.end()) {
-                node = node->fail;
-            }
-
-            if (node->children.find(text[i]) != node->children.end()) {
-                node = node->children[text[i]];
-            }
-
-            for (int index : node->output) {
-                cout << "Pattern " << index << " found at position " << i << endl;
-            }
+    vector<int> search(const string& text) {
+        vector<int> result(text.size(), -1);
+        int node = 0;
+        for (int i = 0; i < text.size(); ++i) {
+            while (!edges[node].count(text[i])) node = fail[node];
+            node = edges[node][text[i]];
+            for (int idx : output[node]) result[i] = idx;
         }
-        return;
+        return result;
     }
 
 private:
-    struct TrieNode {
-        map<char, TrieNode*> children;
-        TrieNode* fail = nullptr;
-        vector<int> output;
-    };
-
-    TrieNode* root;
-
-    void deleteTrie(TrieNode* node) {
-        for (auto& p : node->children) {
-            deleteTrie(p.second);
-        }
-        delete node;
-        return;
-    }
+    vector<unordered_map<char, int>> edges;
+    vector<int> fail;
+    vector<set<int>> output;
 };
